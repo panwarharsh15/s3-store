@@ -9,7 +9,7 @@ pipeline {
         stage('Clone Repo') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/your-org/your-repo.git'
+                    url: 'https://github.com/panwarharsh15/s3-store.git'
             }
         }
 
