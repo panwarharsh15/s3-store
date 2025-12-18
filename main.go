@@ -65,5 +65,5 @@ func main() {
 		log.Fatalf("Upload failed: %v", err)
 	}
 
-	fmt.Println("✅ All files uploaded successfully")
+	fmt.Println("All files uploaded successfully")
 }
