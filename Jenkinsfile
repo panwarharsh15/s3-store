@@ -2,36 +2,52 @@ pipeline {
     agent any
 
     environment {
-        AWS_DEFAULT_REGION = "us-east-1"
+        AWS_REGION = "us-east-1"
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/panwarharsh15/s3-store.git'
+                checkout scm
             }
         }
 
-        stage('Build Go Script') {
+        stage('Setup Go') {
             steps {
                 sh '''
-                go mod init s3uploader || true
-                go get github.com/aws/aws-sdk-go-v2
-                go get github.com/aws/aws-sdk-go-v2/service/s3
-                go build -o uploader upload_to_s3.go
+                go version
+                go env
                 '''
             }
         }
 
-        stage('Upload to S3') {
+        stage('Build Go Program') {
             steps {
                 sh '''
-                mkdir -p repo
-                cp -r * repo/
-                ./uploader
+                cd deploy
+                go mod init s3sync || true
+                go mod tidy
+                go build -o s3sync
                 '''
             }
+        }
+
+        stage('Deploy to S3') {
+            steps {
+                sh '''
+                cd deploy
+                ./s3sync
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deployment to S3 completed successfully'
+        }
+        failure {
+            echo 'Deployment failed'
         }
     }
 }
