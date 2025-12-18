@@ -15,7 +15,7 @@ import (
 const (
 	bucketName = "automated-store-obj"
 	region     = "us-east-1"
-	rootDir    = "." // Jenkins workspace
+	rootDir    = "." 
 )
 
 func main() {
@@ -34,12 +34,12 @@ func main() {
 			return err
 		}
 
-		// Skip directories and .git
+		
 		if info.IsDir() || strings.Contains(path, ".git") {
 			return nil
 		}
 
-		// S3 object key
+		
 		key := strings.TrimPrefix(path, "./")
 
 		file, err := os.Open(path)
