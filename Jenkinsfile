@@ -28,7 +28,7 @@ pipeline {
         stage('Build Go Program') {
             steps {
                 sh '''
-                cd deploy
+
                 go mod init s3sync || true
                 go mod tidy
                 go build -o s3sync
@@ -39,7 +39,7 @@ pipeline {
         stage('Deploy to S3') {
             steps {
                 sh '''
-                cd deploy
+            
                 ./s3sync
                 '''
             }
