@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    
+    tools {
+        go 'go-1.22'
+    }
 
     environment {
         AWS_REGION = "us-east-1"
