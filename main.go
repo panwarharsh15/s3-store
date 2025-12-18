@@ -6,61 +6,64 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 const (
-	bucketName = "my-s3-bucket-name"
-	region     = "ap-south-1"
+	bucketName = "automated-store-obj"
+	region     = "us-east-1"
+	rootDir    = "." // Jenkins workspace
 )
 
-func uploadFile(client *s3.Client, filePath string, key string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(key),
-		Body:   file,
-	})
-	return err
-}
-
 func main() {
-	dir := "./repo" // Jenkins workspace path
-
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(region))
+	cfg, err := config.LoadDefaultConfig(
+		context.TODO(),
+		config.WithRegion(region),
+	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("AWS config error: %v", err)
 	}
 
-	client := s3.NewFromConfig(cfg)
+	s3Client := s3.NewFromConfig(cfg)
 
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if info.IsDir() {
+		// Skip directories and .git
+		if info.IsDir() || strings.Contains(path, ".git") {
 			return nil
 		}
 
-		s3Key := path[len(dir)+1:]
-		fmt.Println("Uploading:", s3Key)
+		// S3 object key
+		key := strings.TrimPrefix(path, "./")
 
-		return uploadFile(client, path, s3Key)
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+			Bucket: &bucketName,
+			Key:    &key,
+			Body:   file,
+		})
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Uploaded: %s → s3://%s/%s\n", path, bucketName, key)
+		return nil
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Upload failed: %v", err)
 	}
 
-	fmt.Println("Upload completed successfully")
+	fmt.Println("✅ All files uploaded successfully")
 }
