@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-const (
+var (
 	bucketName = "automated-store-obj"
 	region     = "us-east-1"
 	rootDir    = "." 
